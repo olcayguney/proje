@@ -3,26 +3,31 @@ import { Modal, Button, Input, Select, Slider, message } from "antd";
 
 const { Option } = Select;
 
-const SearchBar = ({ onFilter }) => {
+// ✅ Eksik olan defaultFilters eklendi
+const defaultFilters = {
+  title: "",
+  priceRange: [0, 1000000],
+  metrekareRange: [0, 1000],
+  odaSayisi: "",
+  il: "",
+  ilçe: "",
+  mahalle: "",
+  balkon: "Fark Etmez",
+  rentorsale: "Fark Etmez",
+  asansör: "Fark Etmez",
+  esyali: "Fark Etmez",
+  isitma: "Fark Etmez",
+  bahce: "Fark Etmez",
+  otopark: "Fark Etmez",
+  username: "",
+  status: "Fark Etmez",
+};
+
+const SearchBar = ({ onFilter, filteredData }) => {
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-  const [filters, setFilters] = useState({
-    title: "",
-    priceRange: [0, 1000000],
-    metrekareRange: [0, 1000],
-    odaSayisi: "",
-    il: "",
-    ilçe: "",
-    mahalle: "",
-    balkon: "Fark Etmez",
-    rentorsale: "Fark Etmez",
-    asansör: "Fark Etmez",
-    esyali: "Fark Etmez",
-    isitma: "Fark Etmez",
-    bahce: "Fark Etmez",
-    otopark: "Fark Etmez",
-    username:"",
-    status: "Fark Etmez",
-  });
+  const [isMailModalVisible, setIsMailModalVisible] = useState(false);
+
+  const [filters, setFilters] = useState(defaultFilters);
 
   const handleInputChange = (key, value) => {
     setFilters((prevFilters) => ({
@@ -31,13 +36,28 @@ const SearchBar = ({ onFilter }) => {
     }));
   };
 
+  const handleResetFilters = () => {
+    setFilters(defaultFilters);
+    onFilter(defaultFilters);
+    message.success("Filtreler sıfırlandı.");
+  };
+
   const handleFilter = () => {
+  try {
+    onFilter(filters, false); // modal açılmasın filtreleme yaparken
+    setIsFilterModalVisible(false);
+  } catch (error) {
+    console.error("Filtreleme işlemi sırasında bir hata oluştu:", error);
+    message.error("Filtreleme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+  }
+};
+
+  const handleMailGonder = () => {
     try {
-      onFilter(filters);
-      setIsFilterModalVisible(false);
+      onFilter(filters, false); // showListModal = false
+      setIsMailModalVisible(true);
     } catch (error) {
-      console.error("Filtreleme işlemi sırasında bir hata oluştu:", error);
-      message.error("Filtreleme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+      message.error("Mail gönderme önizlemesi sırasında hata oluştu.");
     }
   };
 
@@ -50,19 +70,28 @@ const SearchBar = ({ onFilter }) => {
       >
         Filtrele
       </Button>
+
+      {/* Filtre Modalı */}
       <Modal
         title="Filtreleme"
         open={isFilterModalVisible}
         onCancel={() => setIsFilterModalVisible(false)}
         footer={[
+          <Button key="reset" danger onClick={handleResetFilters}>
+            Filtreleri Temizle
+          </Button>,
           <Button key="cancel" onClick={() => setIsFilterModalVisible(false)}>
             İptal
+          </Button>,
+          <Button key="mail" onClick={handleMailGonder}>
+            Mail Gönder
           </Button>,
           <Button key="filter" type="primary" onClick={handleFilter}>
             Filtrele
           </Button>,
         ]}
       >
+        {/* --- Filtre alanları --- */}
         <div className="filter-group">
           <label>Başlık:</label>
           <Input
@@ -135,7 +164,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Kiralık mı Satılık mı?</label>
           <Select
-            placeholder="Kiralık mı Satılık mı?"
             value={filters.rentorsale}
             onChange={(value) => handleInputChange("rentorsale", value)}
             className="filter-select"
@@ -148,7 +176,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Balkon:</label>
           <Select
-            placeholder="Balkon"
             value={filters.balkon}
             onChange={(value) => handleInputChange("balkon", value)}
             className="filter-select"
@@ -161,7 +188,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Asansör:</label>
           <Select
-            placeholder="Asansör"
             value={filters.asansör}
             onChange={(value) => handleInputChange("asansör", value)}
             className="filter-select"
@@ -174,7 +200,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Eşyalı:</label>
           <Select
-            placeholder="Eşyalı"
             value={filters.esyali}
             onChange={(value) => handleInputChange("esyali", value)}
             className="filter-select"
@@ -187,7 +212,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Isıtmalı:</label>
           <Select
-            placeholder="Isıtmalı"
             value={filters.isitma}
             onChange={(value) => handleInputChange("isitma", value)}
             className="filter-select"
@@ -200,7 +224,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Bahçe:</label>
           <Select
-            placeholder="Bahçe"
             value={filters.bahce}
             onChange={(value) => handleInputChange("bahce", value)}
             className="filter-select"
@@ -213,7 +236,6 @@ const SearchBar = ({ onFilter }) => {
         <div className="filter-group">
           <label>Otopark:</label>
           <Select
-            placeholder="Otopark"
             value={filters.otopark}
             onChange={(value) => handleInputChange("otopark", value)}
             className="filter-select"
@@ -223,6 +245,53 @@ const SearchBar = ({ onFilter }) => {
             <Option value="Hayır">Hayır</Option>
           </Select>
         </div>
+        <div className="filter-group">
+          <label>Kullanıcı Adı:</label>
+          <Input
+            placeholder="Kullanıcı Adı"
+            value={filters.username}
+            onChange={(e) => handleInputChange("username", e.target.value)}
+            className="filter-input"
+          />
+        </div>
+        <div className="filter-group">
+          <label>Durum:</label>
+          <Select
+            value={filters.status}
+            onChange={(value) => handleInputChange("status", value)}
+            className="filter-select"
+          >
+            <Option value="Fark Etmez">Fark Etmez</Option>
+            <Option value={true}>Aktif</Option>
+            <Option value={false}>Pasif</Option>
+          </Select>
+        </div>
+      </Modal>
+
+      {/* Mail Gönder Modalı */}
+      <Modal
+        title="Filtrelenmiş İlanlar Mail Adresinize Gönderildi!"
+        open={isMailModalVisible}
+        onCancel={() => setIsMailModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsMailModalVisible(false)}>
+            Kapat
+          </Button>,
+        ]}
+        width={800}
+      >
+        {filteredData?.length === 0 ? (
+          <p>Filtreye uyan ilan bulunamadı.</p>
+        ) : (
+          <ul>
+            {filteredData.map((item, index) => (
+              <li key={index} style={{ marginBottom: "12px" }}>
+                <strong>{item.title}</strong> - {item.price} TL - {item.m2} m²<br />
+                {item.il}, {item.ilçe}, {item.mahalle} - {item.odasayisi} oda - {item.rentorsale}
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
     </div>
   );

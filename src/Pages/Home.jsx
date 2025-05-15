@@ -7,7 +7,7 @@ import SearchBar from "../components/SearchBar";
 import "./Home.css";
 import Header from "../components/Header";
 
-const SHEET_URL = "https://v1.nocodeapi.com/olacay/google_sheets/xbDvLUEbUfpspSwC";
+const SHEET_URL = "https://v1.nocodeapi.com/ppppssa/google_sheets/YPjUqQxNxAxJxoWl";
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -17,6 +17,7 @@ const Home = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isFilteredListModalVisible, setIsFilteredListModalVisible] = useState(false);
 
   const fetchUser = async () => {
     try {
@@ -41,23 +42,32 @@ const Home = () => {
     }
   };
 
-  const fetchProperties = async () => {
-    try {
-      const response = await axios.get(`${SHEET_URL}?tabId=Sayfa2`);
-      const formatted = response.data.data.map((property, index) => ({
+ const fetchProperties = async () => {
+  try {
+    const response = await axios.get(`${SHEET_URL}?tabId=Sayfa2`);
+    const formatted = response.data.data.map((property, index) => {
+      console.log("Gelen m2:", property.m2, "-> Number(m2):", Number(property.m2));
+      console.log("Gelen odasayisi:", property.odasayisi, "-> Number:", Number(property.odasayisi));
+      console.log("Gelen PRİCE:", property.price, "-> price(tl):", Number(property.price));
+      
+      return {
         ...property,
-        row_id: index + 2, // 1 başlık satırı, 2. satırdan itibaren veri başlıyor
+        row_id: index + 2,
         price: Number(property.price),
         m2: Number(property.m2),
-      }));
-      setProperties(formatted);
-      setFilteredProperties(formatted);
-    } catch (error) {
-      console.error("İlanlar alınamadı:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        odasayisi: Number(property.odasayisi),
+        status: property.status === "FALSE" ? false : true,
+      };
+    });
+    setProperties(formatted);
+    setFilteredProperties(formatted);
+  } catch (error) {
+    console.error("İlanlar alınamadı:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchUser();
@@ -80,7 +90,7 @@ const Home = () => {
           newProperty.balkon,
           newProperty.asansör,
           newProperty.esyali,
-          "devam ediyor",
+          true,
           newProperty.bahce,
           newProperty.otopark,
           newProperty.isitma,
@@ -106,47 +116,65 @@ const Home = () => {
     }
   };
 
-  const handleFilter = (filters) => {
-    try {
-      const filtered = properties.filter((property) => {
-        const matches = (field, value) =>
-          value === "Fark Etmez" || property[field]?.toLowerCase() === value.toLowerCase();
+  const handleFilter = (filters, showListModal = false) => {
+  try {
+    const filtered = properties.filter((property) => {
+      const matches = (field, value) =>
+        value === "Fark Etmez" || property[field]?.toLowerCase() === value.toLowerCase();
 
-        return (
-          matches("balkon", filters.balkon) &&
-          matches("asansör", filters.asansör) &&
-          matches("esyali", filters.esyali) &&
-          matches("bahce", filters.bahce) &&
-          matches("otopark", filters.otopark) &&
-          matches("isitma", filters.isitma) &&
-          (filters.title
-            ? property.title?.toLowerCase().includes(filters.title.toLowerCase())
-            : true) &&
-          (filters.priceRange
-            ? property.price >= filters.priceRange[0] && property.price <= filters.priceRange[1]
-            : true) &&
-          (filters.metrekareRange
-            ? property.m2 >= filters.metrekareRange[0] && property.m2 <= filters.metrekareRange[1]
-            : true) &&
-          (filters.odaSayisi ? property.odasayisi === filters.odaSayisi : true) &&
-          (filters.il ? property.il?.toLowerCase().includes(filters.il.toLowerCase()) : true) &&
-          (filters.ilçe ? property.ilçe?.toLowerCase().includes(filters.ilçe.toLowerCase()) : true) &&
-          (filters.mahalle
-            ? property.mahalle?.toLowerCase().includes(filters.mahalle.toLowerCase())
-            : true) &&
-          matches("rentorsale", filters.rentorsale)
-        );
-      });
+      return (
+        matches("balkon", filters.balkon) &&
+        matches("asansör", filters.asansör) &&
+        matches("esyali", filters.esyali) &&
+        matches("bahce", filters.bahce) &&
+        matches("otopark", filters.otopark) &&
+        matches("isitma", filters.isitma) &&
+        (filters.title
+          ? property.title?.toLowerCase().includes(filters.title.toLowerCase())
+          : true) &&
+        (filters.priceRange
+          ? property.price >= filters.priceRange[0] && property.price <= filters.priceRange[1]
+          : true) &&
+        (filters.metrekareRange
+          ? property.m2 >= filters.metrekareRange[0] && property.m2 <= filters.metrekareRange[1]
+          : true) &&
+        (filters.odaSayisi ? property.odasayisi === filters.odaSayisi : true) &&
+        (filters.il ? property.il?.toLowerCase().includes(filters.il.toLowerCase()) : true) &&
+        (filters.ilçe ? property.ilçe?.toLowerCase().includes(filters.ilçe.toLowerCase()) : true) &&
+        (filters.mahalle
+          ? property.mahalle?.toLowerCase().includes(filters.mahalle.toLowerCase())
+          : true) &&
+        matches("rentorsale", filters.rentorsale) &&
+        (filters.status !== undefined && filters.status !== "Fark Etmez"
+          ? property.status === filters.status
+          : true) &&
+        (filters.username
+          ? property.username?.toLowerCase().includes(filters.username.toLowerCase())
+          : true)
+      );
+    });
 
-      setFilteredProperties(filtered);
-    } catch (error) {
-      console.error("Filtreleme hatası:", error);
-      message.error("Filtreleme sırasında hata.");
+    setFilteredProperties(filtered);
+
+    // Sadece showListModal true ise modal açılır
+    if (showListModal) {
+      setIsFilteredListModalVisible(true);
+    } else {
+      setIsFilteredListModalVisible(false);
     }
-  };
+  } catch (error) {
+    console.error("Filtreleme hatası:", error);
+    message.error("Filtreleme sırasında hata.");
+  }
+};
 
   const handleBuyOrRent = async (property) => {
     try {
+      if (property.status === false) {
+        message.error("Bu ilan zaten satılmış veya kiralanmış.");
+        return;
+      }
+
       const newStatus = property.rentorsale === "Satılık" ? "satıldı" : "kiralandı";
       const rowId = Number(property.row_id || property.rowId);
 
@@ -159,7 +187,7 @@ const Home = () => {
         `${SHEET_URL}?tabId=Sayfa2&row_id=${rowId}`,
         {
           row_id: rowId,
-          status: newStatus,
+          status: "FALSE",
         },
         {
           headers: {
@@ -177,6 +205,7 @@ const Home = () => {
   };
 
   const handleDetailsClick = (property) => {
+    
     setSelectedProperty(property);
     setIsModalVisible(true);
   };
@@ -184,6 +213,10 @@ const Home = () => {
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedProperty(null);
+  };
+
+  const handleFilteredListModalClose = () => {
+    setIsFilteredListModalVisible(false);
   };
 
   if (loading) {
@@ -195,7 +228,7 @@ const Home = () => {
       <Header username={user?.username || "Misafir"} />
       <h1 className="home-title">Hoş Geldiniz, {user?.username || "Misafir"}!</h1>
       <p className="home-role">Rolünüz: {user?.role || "Belirtilmedi"}</p>
-      <SearchBar onFilter={handleFilter} />
+      <SearchBar onFilter={handleFilter} filteredData={filteredProperties} />
       <Button
         type="primary"
         className="add-property-button"
@@ -217,6 +250,34 @@ const Home = () => {
         )}
         className="property-list"
       />
+
+      {/* Filtrelenmiş ilanları gösteren modal */}
+      <Modal
+        title="Filtrelenmiş İlanlar"
+        open={isFilteredListModalVisible}
+        onCancel={handleFilteredListModalClose}
+        footer={[
+          <Button key="close" onClick={handleFilteredListModalClose}>
+            Kapat
+          </Button>,
+        ]}
+      >
+        {filteredProperties.length === 0 ? (
+          <p>Filtreye uygun ilan bulunamadı.</p>
+        ) : (
+          <List
+            dataSource={filteredProperties}
+            renderItem={(item) => (
+              <List.Item>
+                <div>
+                  <strong>{item.title}</strong> - {item.price}₺ - {item.il}/{item.ilçe}
+                </div>
+              </List.Item>
+            )}
+          />
+        )}
+      </Modal>
+
       {selectedProperty && (
         <Modal
           title="İlan Detayları"
@@ -228,6 +289,7 @@ const Home = () => {
             </Button>,
           ]}
         >
+          {console.log("Modaldaki property:", property)}
           {Object.entries(selectedProperty).map(([key, value]) => (
             <p key={key}>
               <strong>{key}:</strong> {value || "Belirtilmedi"}
@@ -235,6 +297,7 @@ const Home = () => {
           ))}
         </Modal>
       )}
+
       {isAddModalVisible && (
         <AddPropertyModal
           visible={isAddModalVisible}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Button, Tag } from "antd";
+import { Button, Tag, Modal } from "antd";
 import "./PropertyCard.css";
 
 const PropertyCard = ({ property, onBuyOrRent }) => {
@@ -30,23 +30,15 @@ const PropertyCard = ({ property, onBuyOrRent }) => {
       </p>
       <p className="property-status">
         <strong>Durum:</strong>{" "}
-        <Tag
-          color={
-            property.status === "Satıldı" || property.status === "Kiralandı"
-              ? "red"
-              : "green"
-          }
-        >
-          {property.status || "Devam Ediyor"}
+        <Tag color={property.status ? "green" : "red"}>
+          {property.status ? "Devam Ediyor" : "Satıldı/Kiralandı"}
         </Tag>
       </p>
       <Button
         type="primary"
         onClick={() => onBuyOrRent(property)}
         className="buy-rent-button"
-        disabled={
-          property.status === "Satıldı" || property.status === "Kiralandı"
-        }
+        disabled={!property.status}
       >
         {property.rentorsale === "Satılık" ? "Satın Al" : "Kirala"}
       </Button>
@@ -61,7 +53,7 @@ const PropertyCard = ({ property, onBuyOrRent }) => {
       {/* Detaylar Modalı */}
       <Modal
         title="İlan Detayları"
-        visible={isModalVisible}
+        open={isModalVisible}
         onCancel={handleCancel}
         footer={[
           <Button key="close" onClick={handleCancel}>
@@ -78,9 +70,8 @@ const PropertyCard = ({ property, onBuyOrRent }) => {
         <p>
           <strong>Fiyat:</strong> {property.price || "Belirtilmedi"} TL
         </p>
-        <p>
-          <strong>Metrekare:</strong> {property.m2 || "Belirtilmedi"} m²
-        </p>
+        <p><strong>{property.odasayisi || "Oda bilgisi yok"} - {property.m2 ? `${property.m2.toLocaleString()} m²` : "m² bilgisi yok"}</strong></p>
+
         <p>
           <strong>Oda Sayısı:</strong> {property.odasayisi || "Belirtilmedi"}
         </p>
@@ -94,7 +85,7 @@ const PropertyCard = ({ property, onBuyOrRent }) => {
           <strong>Mahalle:</strong> {property.mahalle || "Belirtilmedi"}
         </p>
         <p>
-          <strong>Kiralık mı Satılık mı?</strong> {property.rentorsale || "Belirtilmedi"}
+          <strong>Kiralık mı Satılık mı?:</strong> {property.rentorsale || "Belirtilmedi"}
         </p>
         <p>
           <strong>Balkon:</strong> {property.balkon || "Belirtilmedi"}
@@ -106,7 +97,10 @@ const PropertyCard = ({ property, onBuyOrRent }) => {
           <strong>Eşyalı:</strong> {property.esyali || "Belirtilmedi"}
         </p>
         <p>
-          <strong>Durum:</strong> {property.status || "Devam Ediyor"}
+          <strong>Durum:</strong>{" "}
+          <Tag color={property.status ? "green" : "red"}>
+            {property.status ? "Devam Ediyor" : "Satıldı/Kiralandı"}
+          </Tag>
         </p>
         <p>
           <strong>Bahçe:</strong> {property.bahce || "Belirtilmedi"}
